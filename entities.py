@@ -347,14 +347,14 @@ class NodeADR:
             if best_result == "SUCCESS":
                 self.packets_success += 1
                 self.snr_history.append(best_snr)                                                   # Guarda SNR para optimizar
-                self.adr_failure_counter = 0                                                        # ¡Éxito! Reinicia el contador de fallos
+                self.adr_failure_counter = 0                                                        # Éxito: Reinicia el contador de fallos
             
             elif best_result == "FAILED_SENSITIVITY":
                 self.snr_history.append(best_snr)                                                   # Guarda SNR (bajo) para optimizar
-                self.adr_failure_counter += 1                                                       # ¡Fallo! Incrementa el contador
+                self.adr_failure_counter += 1                                                       # Fallo: Incrementa el contador
                 
             elif best_result == "FAILED_COLLISION":
-                self.adr_failure_counter += 1                                                       # ¡Fallo! Incrementa el contador
+                self.adr_failure_counter += 1                                                       # Fallo: Incrementa el contador
             
             if len(self.snr_history) > ADR_HISTORY_LEN:
                 self.snr_history.pop(0)
@@ -371,9 +371,8 @@ class NodeDQN:
         self.gateways = gateways
         self.id = node_id
         self.x, self.y = x, y
-        self.brain = global_brain # Referencia al cerebro central
+        self.brain = global_brain
         
-        # Calcular RSSI inicial (Igual que tu Node normal)
         self.closest_gw_dist = min([max(1.0, math.sqrt((self.x - gw.x)**2 + (self.y - gw.y)**2)) for gw in gateways])
         PTX_GW = 14.0 
         path_loss = log_distance_pl_db(self.closest_gw_dist, FREQ_MHZ, PATH_LOSS_EXPONENT)
@@ -386,7 +385,6 @@ class NodeDQN:
         self.process = env.process(self.run())
 
     def calculate_reward(self, result, sf, tp):
-        # MISMA LÓGICA que tu agente Q-Learning para que la comparación sea justa
         if result == "SUCCESS": r_pdr = 10.0
         else: r_pdr = -1.0
         
@@ -434,7 +432,6 @@ class NodeDQN:
             
             if best_result == "SUCCESS": self.packets_success += 1
 
-            # 5. Entrenar al cerebro central
             reward = self.calculate_reward(best_result, self.current_sf, self.current_tp)
             
             # El cerebro guarda la experiencia
@@ -443,8 +440,7 @@ class NodeDQN:
                 action_idx, reward,             # Acción y Recompensa
                 self.avg_rssi, congestion       # Siguiente estado
             )
-            
-            # El cerebro entrena (aprende)
+
             self.brain.optimize_model()
             
             # 6. Esperar
