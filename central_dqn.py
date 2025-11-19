@@ -7,7 +7,7 @@ from collections import deque
 import math
 from parameters import SF_RANGE, TX_POWERS
 
-# Parámetros de la IA
+# Parámetros
 BATCH_SIZE = 64
 GAMMA = 0.9
 EPS_START = 0.9
