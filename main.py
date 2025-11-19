@@ -43,19 +43,14 @@ if __name__ == "__main__":
     results_dqn = []
     print("\n\n--- INICIANDO PRUEBAS DE ESCALABILIDAD: DQN (Centralizado) ---")
     
-    for count in NODE_TEST_COUNTS:
-        # No hay q_table que borrar porque el DQN empieza de cero cada vez en su __init__
-        random.seed(0)
-        np.random.seed(0)
-        
+    for count in NODE_TEST_COUNTS:   
         pdr = run_simulation(node_count=count, 
-                             simulation_mode='dqn', # <-- Modo nuevo
+                             simulation_mode='dqn', 
                              sim_duration_ms=SIM_DURATION_PER_RUN,
                              results_dir="results",
-                             qtable_path="") # No usa archivo pickle
+                             qtable_path="")
         results_dqn.append(pdr)
         
-        # Graficar topología también para DQN
         csv_path = os.path.join("results", f"topologia_final_dqn_{count}n.csv")
         png_path = os.path.join("results", f"topologia_sf_dqn_{count}n.png")
         plot_sf_distribution(csv_path, png_path)
