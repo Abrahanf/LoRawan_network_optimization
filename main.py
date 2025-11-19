@@ -1,7 +1,4 @@
-import numpy as np
-import random
 import os
-import matplotlib.pyplot as plt
 from parameters import *
 from simulation import *
 
@@ -11,7 +8,7 @@ from simulation import *
 
 if __name__ == "__main__":
     
-    NODE_TEST_COUNTS = [10,100,200,500,1000,2000]
+    NODE_TEST_COUNTS = [10]
     SIM_DURATION_PER_RUN = 80000 * 1000               
     results_qlearning = []
     results_adr = []
