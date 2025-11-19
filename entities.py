@@ -5,7 +5,7 @@ import simpy
 from parameters import *
 from lora_physics import *
 from agents import QLearningAgent
-
+from central_dqn import *
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # 4. El Gateway
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -360,5 +360,93 @@ class NodeADR:
                 self.snr_history.pop(0)
 
             # 5. ESPERAR
+            interval = PACKET_INTERVAL_MS + random.uniform(-PACKET_JITTER_MS, PACKET_JITTER_MS)
+            yield self.env.timeout(max(1000.0, interval - toa))
+
+
+
+class NodeDQN:
+    def __init__(self, env, gateways, node_id, x, y, global_brain):
+        self.env = env
+        self.gateways = gateways
+        self.id = node_id
+        self.x, self.y = x, y
+        self.brain = global_brain # Referencia al cerebro central
+        
+        # Calcular RSSI inicial (Igual que tu Node normal)
+        self.closest_gw_dist = min([max(1.0, math.sqrt((self.x - gw.x)**2 + (self.y - gw.y)**2)) for gw in gateways])
+        PTX_GW = 14.0 
+        path_loss = log_distance_pl_db(self.closest_gw_dist, FREQ_MHZ, PATH_LOSS_EXPONENT)
+        self.avg_rssi = PTX_GW - path_loss
+        
+        self.current_sf = 12
+        self.current_tp = 14
+        self.packets_sent = 0
+        self.packets_success = 0
+        self.process = env.process(self.run())
+
+    def calculate_reward(self, result, sf, tp):
+        # MISMA LÓGICA que tu agente Q-Learning para que la comparación sea justa
+        if result == "SUCCESS": r_pdr = 10.0
+        else: r_pdr = -1.0
+        
+        toa = TOA_MAP_MS[sf]
+        norm_toa = (toa - MIN_TOA_MS) / (MAX_TOA_MS - MIN_TOA_MS)
+        norm_tp = (tp - MIN_TP) / (MAX_TP - MIN_TP)
+        cost = (0.7 * norm_toa + 0.3 * norm_tp)
+        return r_pdr - cost
+
+    def run(self):
+        yield self.env.timeout(random.uniform(0, PACKET_INTERVAL_MS))
+        
+        while True:
+            # 1. Preguntar al cerebro qué hacer
+            congestion = self.gateways[0].current_congestion_level 
+            action_idx = self.brain.select_action(self.avg_rssi, congestion)
+            self.current_sf, self.current_tp = self.brain.actions[action_idx]
+            
+            # 2. Elegir canal y tiempo
+            current_channel = random.randint(0, N_CHANNELS - 1)
+            toa = TOA_MAP_MS[self.current_sf]
+            tx_start = self.env.now
+            tx_end = tx_start + toa
+            
+            packet = {
+                'node_id': self.id, 'sf': self.current_sf, 'tp': self.current_tp,
+                'channel': current_channel,
+                'tx_start_time': tx_start, 'tx_end_time': tx_end,
+                'node_x': self.x, 'node_y': self.y
+            }
+            
+            # 3. Enviar
+            self.packets_sent += 1
+            for gw in self.gateways:
+                gw.record_transmission(packet)
+            yield self.env.timeout(toa)
+            
+            # 4. Ver resultado
+            best_result = "FAILED_SENSITIVITY"
+            for gw in self.gateways:
+                dist = max(1.0, math.sqrt((self.x - gw.x)**2 + (self.y - gw.y)**2))
+                res, _ = gw.check_packet_success(packet, dist)
+                if res == "SUCCESS": best_result = "SUCCESS"
+                elif res == "FAILED_COLLISION" and best_result != "SUCCESS": best_result = "FAILED_COLLISION"
+            
+            if best_result == "SUCCESS": self.packets_success += 1
+
+            # 5. Entrenar al cerebro central
+            reward = self.calculate_reward(best_result, self.current_sf, self.current_tp)
+            
+            # El cerebro guarda la experiencia
+            self.brain.store_transition(
+                self.avg_rssi, congestion,      # Estado actual
+                action_idx, reward,             # Acción y Recompensa
+                self.avg_rssi, congestion       # Siguiente estado
+            )
+            
+            # El cerebro entrena (aprende)
+            self.brain.optimize_model()
+            
+            # 6. Esperar
             interval = PACKET_INTERVAL_MS + random.uniform(-PACKET_JITTER_MS, PACKET_JITTER_MS)
             yield self.env.timeout(max(1000.0, interval - toa))

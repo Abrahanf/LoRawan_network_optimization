@@ -8,7 +8,7 @@ from simulation import *
 
 if __name__ == "__main__":
     
-    NODE_TEST_COUNTS = [10]
+    NODE_TEST_COUNTS = [1000,5000,10000]
     SIM_DURATION_PER_RUN = 80000 * 1000               
     results_qlearning = []
     results_adr = []
@@ -40,19 +40,41 @@ if __name__ == "__main__":
         png_path = os.path.join("results", f"topologia_sf_adr_{count}n.png")
         plot_sf_distribution(csv_path, png_path)
 
-    print("\n\n--- Todas las simulaciones completadas. Generando gráfico final... ---")
+    results_dqn = []
+    print("\n\n--- INICIANDO PRUEBAS DE ESCALABILIDAD: DQN (Centralizado) ---")
+    
+    for count in NODE_TEST_COUNTS:
+        # No hay q_table que borrar porque el DQN empieza de cero cada vez en su __init__
+        random.seed(0)
+        np.random.seed(0)
+        
+        pdr = run_simulation(node_count=count, 
+                             simulation_mode='dqn', # <-- Modo nuevo
+                             sim_duration_ms=SIM_DURATION_PER_RUN,
+                             results_dir="results",
+                             qtable_path="") # No usa archivo pickle
+        results_dqn.append(pdr)
+        
+        # Graficar topología también para DQN
+        csv_path = os.path.join("results", f"topologia_final_dqn_{count}n.csv")
+        png_path = os.path.join("results", f"topologia_sf_dqn_{count}n.png")
+        plot_sf_distribution(csv_path, png_path)
+
+    print("\n--- Generando gráfico final... ---")
     plt.figure(figsize=(10, 6))
-    plt.plot(NODE_TEST_COUNTS, results_qlearning, label="Q-Learning (Network-Aware)", marker='o', markersize=8, linewidth=2)
-    plt.plot(NODE_TEST_COUNTS, results_adr, label="ADR Nativo (Link-Based)", marker='x', markersize=8, linestyle='--', linewidth=2)
+    plt.plot(NODE_TEST_COUNTS, results_qlearning, label="Q-Learning (Distribuido)", marker='o', linewidth=2)
+    plt.plot(NODE_TEST_COUNTS, results_adr, label="ADR Nativo (Estándar)", marker='x', linestyle='--', linewidth=2)
+    plt.plot(NODE_TEST_COUNTS, results_dqn, label="DQN (Centralizado)", marker='s', linestyle='-.', linewidth=2, color='green')
     plt.title(f"Comparativa de Escalabilidad (PDR vs Densidad)\n({len(GW_POSITIONS)} GWs, {N_CHANNELS} Canales)")
-    plt.xlabel("Número de Nodos en la Red (Densidad)")
+    plt.xlabel("Número de Nodos en la Red")
     plt.ylabel("PDR Global (%)")
     plt.legend()
-    plt.grid(True)
-    plt.ylim(0, 100)
+    plt.grid(True, which='both', linestyle='--', alpha=0.7)
+    plt.ylim(0, 100) 
     final_graph_file = os.path.join("results", "comparativa_escalabilidad.png")
     plt.savefig(final_graph_file)
     plt.close()
-    print(f"Gráfico de escalabilidad guardado en: {final_graph_file}")
-    print("\nResultados (Q-Learning):", results_qlearning)
-    print("Resultados (ADR):", results_adr)
+    print(f"Gráfico guardado en: {final_graph_file}")
+    print("Resultados Q-Learning:", results_qlearning)
+    print("Resultados ADR:", results_adr)
+    print("Resultados DQN:", results_dqn)

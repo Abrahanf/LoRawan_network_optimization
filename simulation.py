@@ -9,6 +9,7 @@ from collections import defaultdict
 from parameters import *
 from entities import *
 from utils import *
+from central_dqn import CentralizedAgent
 
 # -------------------------------------------------------------------
 # 🏁 7. Función Principal de Simulación
@@ -22,6 +23,12 @@ def run_simulation(node_count, simulation_mode, sim_duration_ms, results_dir, qt
     
     print(f"*** Iniciando simulación: {node_count} Nodos, Modo: {simulation_mode.upper()} ***")
     
+    # Inicializar cerebro central SI es necesario
+    global_brain = None
+    if simulation_mode == "dqn":
+       global_brain = CentralizedAgent()
+    print("--- Cerebro Central (DQN) Activado ---")
+
     suffix = f"_{simulation_mode}_{node_count}n"
     EVOL_FILE = os.path.join("results", f"evolucion_pdr{suffix}.png")
     TOPO_SF_FILE = os.path.join("results",f"topologia_sf_final{suffix}.png")
@@ -58,8 +65,10 @@ def run_simulation(node_count, simulation_mode, sim_duration_ms, results_dir, qt
             action_len = len(SF_RANGE) * len(TX_POWERS)
             node_q_table = q_all_tables.get(str(i), defaultdict(lambda: np.zeros(action_len)))
             nodes.append(Node(env, gateways, node_id=i, x=x, y=y, q_table_dict=node_q_table))
-        else: 
+        elif simulation_mode == "adr": 
             nodes.append(NodeADR(env, gateways, node_id=i, x=x, y=y))
+        elif simulation_mode == "dqn":
+            nodes.append(NodeDQN(env, gateways, i, x, y, global_brain))
 
     monitor = DataMonitor(env, gateways, nodes)
 
