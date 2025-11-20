@@ -12,7 +12,7 @@ if __name__ == "__main__":
     MODEL_PATH = os.path.join(RESULTS_DIR, "dqn_trained_model.pth")
     
     # 1. Configuración de Entrenamiento
-    TRAIN_NODES = 1000 
+    TRAIN_NODES = 200 
     TRAIN_DURATION = 100000 * 1000
     brain = CentralizedAgent(training_mode=True)
     

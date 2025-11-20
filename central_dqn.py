@@ -92,6 +92,10 @@ class CentralizedAgent:
         if len(self.memory) < BATCH_SIZE:
             return
         
+        self.learn_step_counter += 1
+        if self.learn_step_counter % 10 != 0:
+            return
+        
         batch = random.sample(self.memory, BATCH_SIZE)
         state_batch = torch.stack([x[0] for x in batch])
         action_batch = torch.LongTensor([[x[1]] for x in batch])
