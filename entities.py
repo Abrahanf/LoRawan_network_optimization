@@ -374,9 +374,8 @@ class NodeDQN:
         self.brain = global_brain
         
         self.closest_gw_dist = min([max(1.0, math.sqrt((self.x - gw.x)**2 + (self.y - gw.y)**2)) for gw in gateways])
-        PTX_GW = 14.0 
         path_loss = log_distance_pl_db(self.closest_gw_dist, FREQ_MHZ, PATH_LOSS_EXPONENT)
-        self.avg_rssi = PTX_GW - path_loss
+        self.avg_rssi = 14.0 - path_loss
         
         self.current_sf = 12
         self.current_tp = 14
@@ -399,20 +398,19 @@ class NodeDQN:
         
         while True:
             # 1. Preguntar al cerebro qué hacer
-            congestion = self.gateways[0].current_congestion_level 
-            action_idx = self.brain.select_action(self.avg_rssi, congestion)
+            current_congestion = self.gateways[0].current_congestion_level 
+            action_idx = self.brain.select_action(self.avg_rssi, current_congestion)
             self.current_sf, self.current_tp = self.brain.actions[action_idx]
             
             # 2. Elegir canal y tiempo
             current_channel = random.randint(0, N_CHANNELS - 1)
             toa = TOA_MAP_MS[self.current_sf]
-            tx_start = self.env.now
-            tx_end = tx_start + toa
             
             packet = {
                 'node_id': self.id, 'sf': self.current_sf, 'tp': self.current_tp,
                 'channel': current_channel,
-                'tx_start_time': tx_start, 'tx_end_time': tx_end,
+                'tx_start_time': self.env.now,
+                'tx_end_time': self.env.now + toa,
                 'node_x': self.x, 'node_y': self.y
             }
             
@@ -434,14 +432,19 @@ class NodeDQN:
 
             reward = self.calculate_reward(best_result, self.current_sf, self.current_tp)
             
+            next_congestion = self.gateways[0].current_congestion_level
+
             # El cerebro guarda la experiencia
             self.brain.store_transition(
-                self.avg_rssi, congestion,      # Estado actual
+                self.avg_rssi, current_congestion,      # Estado actual
                 action_idx, reward,             # Acción y Recompensa
-                self.avg_rssi, congestion       # Siguiente estado
+                self.avg_rssi, current_congestion       # Siguiente estado
             )
 
             self.brain.optimize_model()
+            # Actualizar Target Network ocasionalmente (ej. cada 100 paquetes del nodo)
+            if self.packets_sent % 100 == 0:
+                self.brain.update_target_network()
             
             # 6. Esperar
             interval = PACKET_INTERVAL_MS + random.uniform(-PACKET_JITTER_MS, PACKET_JITTER_MS)

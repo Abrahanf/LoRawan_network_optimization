@@ -8,10 +8,11 @@ from simulation import *
 
 if __name__ == "__main__":
     
-    NODE_TEST_COUNTS = [1000,5000,10000]
+    NODE_TEST_COUNTS = [100]
     SIM_DURATION_PER_RUN = 80000 * 1000               
     results_qlearning = []
     results_adr = []
+    MODEL_PATH = os.path.join("results", "dqn_trained_model.pth")
     
     print("\n\n--- INICIANDO PRUEBAS DE ESCALABILIDAD: Q-LEARNING ---")              # EJECUTAR PRUEBAS Q-LEARNING
     for count in NODE_TEST_COUNTS: 
@@ -45,10 +46,10 @@ if __name__ == "__main__":
     
     for count in NODE_TEST_COUNTS:   
         pdr = run_simulation(node_count=count, 
-                             simulation_mode='dqn', 
+                             simulation_mode='dqn_train', # <-- MODO RÁPIDO 
                              sim_duration_ms=SIM_DURATION_PER_RUN,
                              results_dir="results",
-                             qtable_path="")
+                             qtable_path=MODEL_PATH)
         results_dqn.append(pdr)
         
         csv_path = os.path.join("results", f"topologia_final_dqn_{count}n.csv")

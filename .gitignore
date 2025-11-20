@@ -7,8 +7,9 @@ __pycache__/
 
 outputs/
 
-#results/
-#*.pkl
+results/
+*.pkl
 #*.png
-#*.csv
-#*.log
+*.csv
+*.log
+*.pth

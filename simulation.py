@@ -25,9 +25,30 @@ def run_simulation(node_count, simulation_mode, sim_duration_ms, results_dir, qt
     
     # Inicializar cerebro central SI es necesario
     global_brain = None
-    if simulation_mode == "dqn":
-       global_brain = CentralizedAgent()
-    print("--- Cerebro Central (DQN) Activado ---")
+
+    if simulation_mode == "dqn_train":
+        # Modo Entrenamiento: Crea agente nuevo, entrena y guarda al final
+        global_brain = CentralizedAgent(training_mode=True)
+        # Usamos "dqn" internamente para la lógica de los nodos
+        internal_mode = "dqn" 
+        
+    elif simulation_mode == "dqn_inference":
+        # Modo Uso: Crea agente, CARGA el archivo y NO entrena
+        global_brain = CentralizedAgent(training_mode=False)
+        try:
+            global_brain.load_model(qtable_path) # qtable_path trae la ruta del .pth
+        except:
+            print("Error: No se encontró el modelo entrenado. Ejecuta train_dqn.py primero.")
+            return 0
+        internal_mode = "dqn"
+        
+    elif simulation_mode == "dqn":
+        # Modo antiguo (Entrena desde cero y borra al final)
+        global_brain = CentralizedAgent(training_mode=True)
+        internal_mode = "dqn"
+        
+    else:
+        internal_mode = simulation_mode
 
     suffix = f"_{simulation_mode}_{node_count}n"
     EVOL_FILE = os.path.join("results", f"evolucion_pdr{suffix}.png")
@@ -67,7 +88,7 @@ def run_simulation(node_count, simulation_mode, sim_duration_ms, results_dir, qt
             nodes.append(Node(env, gateways, node_id=i, x=x, y=y, q_table_dict=node_q_table))
         elif simulation_mode == "adr": 
             nodes.append(NodeADR(env, gateways, node_id=i, x=x, y=y))
-        elif simulation_mode == "dqn":
+        elif internal_mode == "dqn":
             nodes.append(NodeDQN(env, gateways, i, x, y, global_brain))
 
     monitor = DataMonitor(env, gateways, nodes)
@@ -115,4 +136,9 @@ def run_simulation(node_count, simulation_mode, sim_duration_ms, results_dir, qt
         print(f"Error al guardar topología CSV: {e}")
 
     print(f"--- Fin simulación {node_count} nodos. PDR Final: {global_pdr:.2f}% ---")
+
+    # AL FINAL: Guardar si estábamos entrenando
+    if simulation_mode == "dqn_train":
+        global_brain.save_model(qtable_path)
+
     return global_pdr
