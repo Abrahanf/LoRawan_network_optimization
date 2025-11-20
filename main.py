@@ -8,7 +8,7 @@ from simulation import *
 
 if __name__ == "__main__":
     
-    NODE_TEST_COUNTS = [100]
+    NODE_TEST_COUNTS = [100, 200, 500, 1000, 2000, 5000, 10000]
     SIM_DURATION_PER_RUN = 80000 * 1000               
     results_qlearning = []
     results_adr = []
