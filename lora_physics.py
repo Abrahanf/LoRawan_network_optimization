@@ -17,8 +17,8 @@ def log_distance_pl_db(distance_m, freq_mhz, n):                                
 
 def okumura_hata_pl_db(distance_m, freq_mhz):
     d_km = max(0.01, distance_m / 1000.0)                                       # Distancia en km
-    hb = 2.0                                                                    # Altura de la antena base (Gateway) en metros
-    hm = 1.0                                                                    # Altura de la antena móvil (Nodo) en metros
+    hb = 15.0                                                                    # Altura de la antena base (Gateway) en metros
+    hm = 1.5                                                                    # Altura de la antena móvil (Nodo) en metros
     ahm = (1.1 * math.log10(freq_mhz) - 0.7) * hm - (1.56 * math.log10(freq_mhz) - 0.8)
     Lp_urban = (69.55 + 26.16 * math.log10(freq_mhz) 
                 - 13.82 * math.log10(hb) - ahm 

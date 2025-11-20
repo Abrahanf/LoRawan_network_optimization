@@ -8,7 +8,7 @@ import math
 from parameters import SF_RANGE, TX_POWERS
 
 # Parámetros
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 GAMMA = 0.9
 EPS_START = 0.9
 EPS_END = 0.05

@@ -8,7 +8,7 @@ from simulation import *
 
 if __name__ == "__main__":
     
-    NODE_TEST_COUNTS = [100]
+    NODE_TEST_COUNTS = [1000]
     SIM_DURATION_PER_RUN = 80000 * 1000               
     results_qlearning = []
     results_adr = []
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     
     for count in NODE_TEST_COUNTS:   
         pdr = run_simulation(node_count=count, 
-                             simulation_mode='dqn_train', # <-- MODO RÁPIDO 
+                             simulation_mode='dqn_inference', # <-- MODO RÁPIDO 
                              sim_duration_ms=SIM_DURATION_PER_RUN,
                              results_dir="results",
                              qtable_path=MODEL_PATH)

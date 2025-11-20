@@ -442,9 +442,8 @@ class NodeDQN:
             )
 
             self.brain.optimize_model()
-            # Actualizar Target Network ocasionalmente (ej. cada 100 paquetes del nodo)
-            if self.packets_sent % 100 == 0:
-                self.brain.update_target_network()
+            
+            self.brain.update_target_network()
             
             # 6. Esperar
             interval = PACKET_INTERVAL_MS + random.uniform(-PACKET_JITTER_MS, PACKET_JITTER_MS)
